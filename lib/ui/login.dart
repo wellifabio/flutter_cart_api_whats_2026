@@ -1,5 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../api.dart';
 import '../core/colors.dart';
+import '../core/janelas.dart';
+import 'home.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -10,11 +17,76 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   List<dynamic> usuarios = [];
-  
+  String email = '';
+  String senha = '';
+
+  @override
+  void initState() {
+    super.initState();
+    carrearUsuariosAPI();
+  }
+
+  Future<void> carrearUsuariosAPI() async {
+    final url = Uri.parse('${Api.getUsuarios()}');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        usuarios = json.decode(response.body);
+      } else {
+        msgDialog('Erro de conexão', response.body);
+      }
+    } catch (e) {
+      msgDialog("Erro de conexão", e.toString());
+    }
+    verificarSeJaEstaLogado();
+  }
+
+  Future<void> verificarSeJaEstaLogado() async {
+    final localStorage = await SharedPreferences.getInstance();
+    if (localStorage.containsKey('user_data')) {
+      toHome();
+    }
+  }
+
+  Future<void> salvarPerfil(int indice) async {
+    final localStorage = await SharedPreferences.getInstance();
+    await localStorage.setString('user_data', json.encode(usuarios[indice]));
+    toHome();
+  }
+
+  void toHome() {
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const Home()),
+      );
+    }
+  }
+
+  void entrar() {
+    int indice = -1;
+    indice = usuarios.indexWhere((user) => user['email'] == email);
+    if (indice != -1) {
+      if (usuarios[indice]['senha'] == senha) {
+        salvarPerfil(indice);
+      } else {
+        msgDialog("Erro", "Senha inválda.");
+      }
+    } else {
+      msgDialog("Erro", "E-mail não encontrado.");
+    }
+  }
+
+  void msgDialog(String titulo, String msg) {
+    if (mounted) {
+      Janelas.msgDialog(titulo, msg, context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.c2,
+      backgroundColor: AppColors.c3,
       body: Padding(
         padding: const EdgeInsets.all(18.0),
         child: Column(
@@ -41,6 +113,9 @@ class _LoginState extends State<Login> {
                   labelStyle: TextStyle(color: AppColors.c1),
                   hintStyle: TextStyle(color: AppColors.c2),
                 ),
+                onChanged: (value) {
+                  email = value;
+                },
               ),
             ),
             Material(
@@ -63,10 +138,13 @@ class _LoginState extends State<Login> {
                   labelStyle: TextStyle(color: AppColors.c1),
                   hintStyle: TextStyle(color: AppColors.c2),
                 ),
+                onChanged: (value) {
+                  senha = value;
+                },
               ),
             ),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () => entrar(),
               style: ElevatedButton.styleFrom(
                 elevation: 8.0,
                 backgroundColor: AppColors.c3,
