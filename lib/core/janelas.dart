@@ -16,4 +16,36 @@ abstract class Janelas {
       ),
     );
   }
+
+  static bool detalhes(
+    BuildContext context,
+    String produto,
+    String img,
+    String descricao,
+    String preco,
+  ) {
+    bool result = false;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(produto),
+        content: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [Image.network(img), Text(descricao), Text(preco)],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            child: Text("Adicionar ao carrinho"),
+            onPressed: () {
+              result = true;
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
+    return result;
+  }
 }

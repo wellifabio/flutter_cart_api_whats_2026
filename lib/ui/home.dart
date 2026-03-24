@@ -17,6 +17,8 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List<dynamic> produtos = [];
+  List<dynamic> filtrados = [];
+  List<String> categorias = [];
   List<dynamic> carrinho = [];
   String usuario = '';
   String avatar = '';
@@ -30,11 +32,15 @@ class _HomeState extends State<Home> {
   Future<void> verificarSeEstaLogado() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.containsKey('user_data')) {
-      carrearProdutosAPI();
       setState(() {
         usuario = json.decode(prefs.getString('user_data')!)['nome'];
-        avatar = json.decode(prefs.getString('user_data')!)['avatar'];
       });
+      if (json.decode(prefs.getString('user_data')!)['avatar'] != null) {
+        setState(() {
+          avatar = json.decode(prefs.getString('user_data')!)['avatar'];
+        });
+      }
+      await carrearProdutosAPI();
     } else {
       if (mounted) {
         Navigator.pop(context);
@@ -43,11 +49,15 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> carrearProdutosAPI() async {
-    final url = Uri.parse('${Api.getProdutos()}');
+    final url = Uri.parse(Api.getProdutos().toString());
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        produtos = json.decode(response.body);
+        produtos = await json.decode(response.body);
+        setState(() {
+          filtrados = produtos;
+        });
+        filtraCategorias();
       } else {
         msgDialog('Erro de conexão', response.body);
       }
@@ -56,11 +66,21 @@ class _HomeState extends State<Home> {
     }
   }
 
+  void filtraCategorias() {
+    produtos.forEach((p) {
+      if (!categorias.contains(p['categoria'])) {
+        setState(() {
+          categorias.add(p['categoria']);
+        });
+      }
+    });
+  }
+
   ClipRRect userAvatar(String img) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(10.0),
       child: img == ''
-          ? Image.asset('assets/user.png', width: 50, height: 50)
+          ? Icon(Icons.account_circle, size: 40.0, color: AppColors.c4)
           : Image.network(img, width: 50, height: 50, fit: BoxFit.cover),
     );
   }
@@ -68,6 +88,18 @@ class _HomeState extends State<Home> {
   void msgDialog(String titulo, String msg) {
     if (mounted) {
       Janelas.msgDialog(titulo, msg, context);
+    }
+  }
+
+  void verDetalhes(int indice) {
+    if (mounted) {
+      Janelas.detalhes(
+        context,
+        filtrados[indice]['nome'],
+        filtrados[indice]['imagem'],
+        filtrados[indice]['descricao'],
+        filtrados[indice]['preco'].toString(),
+      );
     }
   }
 
@@ -96,8 +128,80 @@ class _HomeState extends State<Home> {
         ),
         body: TabBarView(
           children: [
-            Center(child: Text('Produtos')),
-            Center(child: Text('Carrinho')),
+            Center(
+              child: GridView.builder(
+                itemBuilder: (context, i) => GestureDetector(
+                  onTap: () => verDetalhes(i),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.c3,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.t1, // Cor da sombra
+                          spreadRadius: 3, // Extensão
+                          blurRadius: 5, // Desfoque
+                          offset: Offset(1, 0), // Posição (x, y)
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.network(filtrados[i]['imagem'], width: 100),
+                          Text(
+                            "Id:${filtrados[i]['id']}, ${filtrados[i]['nome']}",
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(filtrados[i]['categoria']),
+                              Text(
+                                filtrados[i]['preco'].toStringAsFixed(2),
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 15,
+                  mainAxisSpacing: 15,
+                  childAspectRatio: 0.9,
+                ),
+                itemCount: filtrados.length,
+              ),
+            ),
+            Center(
+              child: ListView.builder(
+                itemBuilder: (BuildContext context, int i) => ListTile(
+                  leading: Image.network(carrinho[i]['imagem']),
+                  title: Text(
+                    "Id:${carrinho[i]['id']}, ${carrinho[i]['nome']}",
+                  ),
+                  subtitle: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(carrinho[i]['preco']),
+                      Text(carrinho[i]['quantidade']),
+                    ],
+                  ),
+                  trailing: Text(
+                    produtos[i]['subtotal'].toStringAsFixed(2),
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+                padding: const EdgeInsets.all(16),
+                itemCount: carrinho.length,
+              ),
+            ),
           ],
         ),
         bottomNavigationBar: TabBar(
