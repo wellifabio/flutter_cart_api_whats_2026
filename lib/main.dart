@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'core/theme.dart';
 
-import 'ui/spash.dart';
+import 'ui/splash.dart';
 
 void main() {
   runApp(

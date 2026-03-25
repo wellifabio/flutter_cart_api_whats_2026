@@ -16,6 +16,7 @@ abstract class AppTheme {
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: AppColors.c2,
+      titleTextStyle: TextStyle(color: AppColors.c4, fontSize: 20),
       contentTextStyle: TextStyle(color: AppColors.c3),
     ),
   );

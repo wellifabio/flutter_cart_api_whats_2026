@@ -5,7 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api.dart';
 import '../core/colors.dart';
-import '../core/janelas.dart';
+import 'widgets/janelas.dart';
+import 'splash.dart';
 import 'home.dart';
 
 class Login extends StatefulWidget {
@@ -93,7 +94,23 @@ class _LoginState extends State<Login> {
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 20.0,
           children: [
-            Image.asset('assets/favicon.png', width: 150),
+            GestureDetector(
+              onVerticalDragUpdate: (DragUpdateDetails details) {
+                if (details.delta.dy < 0) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const Home()),
+                  );
+                }
+              },
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Splash()),
+                );
+              },
+              child: Image.asset('assets/favicon.png', width: 150),
+            ),
             Material(
               elevation: 8.0, // Intensidade da sombra
               shadowColor: Colors.black,

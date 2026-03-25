@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api.dart';
-import '../core/janelas.dart';
+import 'widgets/janelas.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -67,13 +67,13 @@ class _HomeState extends State<Home> {
   }
 
   void filtraCategorias() {
-    produtos.forEach((p) {
+    for (var p in produtos) {
       if (!categorias.contains(p['categoria'])) {
         setState(() {
           categorias.add(p['categoria']);
         });
       }
-    });
+    }
   }
 
   ClipRRect userAvatar(String img) {
@@ -91,16 +91,48 @@ class _HomeState extends State<Home> {
     }
   }
 
-  void verDetalhes(int indice) {
+  Future<void> verDetalhes(int indice) async {
     if (mounted) {
-      Janelas.detalhes(
+      if (await Janelas.detalhes(
         context,
         filtrados[indice]['nome'],
         filtrados[indice]['imagem'],
         filtrados[indice]['descricao'],
         filtrados[indice]['preco'].toString(),
-      );
+      )) {
+        final dynamic item = {
+          'id': filtrados[indice]['id'],
+          'imagem': filtrados[indice]['imagem'],
+          'nome': filtrados[indice]['nome'],
+          'preco': filtrados[indice]['preco'],
+          'quantidade': 1,
+          'subtotal': filtrados[indice]['preco'],
+        };
+        if (carrinho.any((element) => element['id'] == item['id'])) {
+          setState(() {
+            carrinho = carrinho.map((element) {
+              if (element['id'] == item['id']) {
+                element['quantidade'] += 1;
+                element['subtotal'] = element['quantidade'] * element['preco'];
+              }
+              return element;
+            }).toList();
+          });
+        } else {
+          setState(() {
+            carrinho.add(item);
+          });
+        }
+      }
     }
+  }
+
+  String totalCarrinho() {
+    double total = 0;
+    for (var item in carrinho) {
+      total += item['subtotal'];
+    }
+    return "R\$ ${total.toStringAsFixed(2)}";
   }
 
   Future<void> sair() async {
@@ -128,79 +160,261 @@ class _HomeState extends State<Home> {
         ),
         body: TabBarView(
           children: [
-            Center(
-              child: GridView.builder(
-                itemBuilder: (context, i) => GestureDetector(
-                  onTap: () => verDetalhes(i),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.c3,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.t1, // Cor da sombra
-                          spreadRadius: 3, // Extensão
-                          blurRadius: 5, // Desfoque
-                          offset: Offset(1, 0), // Posição (x, y)
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.network(filtrados[i]['imagem'], width: 100),
-                          Text(
-                            "Id:${filtrados[i]['id']}, ${filtrados[i]['nome']}",
+            Column(
+              children: [
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            filtrados = produtos;
+                          });
+                        },
+                        child: Container(
+                          height: 70,
+                          margin: EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 5,
                           ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          padding: EdgeInsets.symmetric(horizontal: 15),
+                          decoration: BoxDecoration(
+                            color: AppColors.c2,
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Center(
+                            child: Text(
+                              "Todos",
+                              style: TextStyle(color: AppColors.c4),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      for (var c in categorias)
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              filtrados = produtos
+                                  .where((p) => p['categoria'] == c)
+                                  .toList();
+                            });
+                          },
+                          child: Container(
+                            height: 70,
+                            margin: EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 5,
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 15),
+                            decoration: BoxDecoration(
+                              color: AppColors.c2,
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            child: Center(
+                              child: Text(
+                                c,
+                                style: TextStyle(color: AppColors.c4),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: GridView.builder(
+                    itemBuilder: (context, i) => GestureDetector(
+                      onTap: () => verDetalhes(i),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.c3,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.t1, // Cor da sombra
+                              spreadRadius: 3, // Extensão
+                              blurRadius: 5, // Desfoque
+                              offset: Offset(1, 0), // Posição (x, y)
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(filtrados[i]['categoria']),
+                              Image.network(filtrados[i]['imagem'], width: 80),
                               Text(
-                                filtrados[i]['preco'].toStringAsFixed(2),
-                                style: TextStyle(fontSize: 16),
+                                "Id:${filtrados[i]['id']}, ${filtrados[i]['nome']}",
+                              ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(filtrados[i]['categoria']),
+                                  Text(
+                                    filtrados[i]['preco'].toStringAsFixed(2),
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
+                        ),
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 15,
+                          mainAxisSpacing: 15,
+                          childAspectRatio: 0.9,
+                        ),
+                    itemCount: filtrados.length,
+                  ),
+                ),
+              ],
+            ),
+            Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    itemBuilder: (BuildContext context, int i) => Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.c4,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.t2,
+                            spreadRadius: 3,
+                            blurRadius: 5,
+                            offset: Offset(1, 0),
+                          ),
                         ],
                       ),
+                      margin: EdgeInsets.only(bottom: 10),
+                      child: ListTile(
+                        leading: Image.network(carrinho[i]['imagem']),
+                        title: Text(
+                          "Id:${carrinho[i]['id']}, ${carrinho[i]['nome']}",
+                        ),
+                        subtitle: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      if (carrinho[i]['quantidade'] > 1) {
+                                        carrinho[i]['quantidade'] -= 1;
+                                        carrinho[i]['subtotal'] =
+                                            carrinho[i]['quantidade'] *
+                                            carrinho[i]['preco'];
+                                      } else {
+                                        carrinho.removeAt(i);
+                                      }
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.c3,
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    child: Text("-"),
+                                  ),
+                                ),
+                                Text(carrinho[i]['quantidade'].toString()),
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      carrinho[i]['quantidade'] += 1;
+                                      carrinho[i]['subtotal'] =
+                                          carrinho[i]['quantidade'] *
+                                          carrinho[i]['preco'];
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.c3,
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    child: Text("+"),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              'R\$ ${carrinho[i]['preco'].toStringAsFixed(2)}',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        trailing: Text(
+                          'R\$ \n${carrinho[i]['subtotal'].toStringAsFixed(2)}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: carrinho.length,
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.c4,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.t2,
+                        spreadRadius: 3,
+                        blurRadius: 5,
+                        offset: Offset(1, 0),
+                      ),
+                    ],
+                  ),
+                  margin: EdgeInsets.all(15),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Total: ${totalCarrinho()}"),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  carrinho = [];
+                                });
+                              },
+                              child: Text("Limpar carrinho"),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {},
+                              child: Text("Eviar pedido"),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                  childAspectRatio: 0.9,
-                ),
-                itemCount: filtrados.length,
-              ),
-            ),
-            Center(
-              child: ListView.builder(
-                itemBuilder: (BuildContext context, int i) => ListTile(
-                  leading: Image.network(carrinho[i]['imagem']),
-                  title: Text(
-                    "Id:${carrinho[i]['id']}, ${carrinho[i]['nome']}",
-                  ),
-                  subtitle: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(carrinho[i]['preco']),
-                      Text(carrinho[i]['quantidade']),
-                    ],
-                  ),
-                  trailing: Text(
-                    produtos[i]['subtotal'].toStringAsFixed(2),
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-                padding: const EdgeInsets.all(16),
-                itemCount: carrinho.length,
-              ),
+              ],
             ),
           ],
         ),
