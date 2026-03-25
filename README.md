@@ -32,6 +32,7 @@ flutter run
 ![Screenshots](./assets/info/screenshot01.png)
 ![Screenshots](./assets/info/screenshot02.png)
 ![Screenshots](./assets/info/screenshot02.png)
+### [Dwnload APK](app-release.apk)
 
 ## Atividade
 - Clone e execute este App no seu PC
