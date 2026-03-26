@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_cart_api_whats_2026/core/colors.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../api.dart';
 import 'widgets/janelas.dart';
@@ -133,6 +134,23 @@ class _HomeState extends State<Home> {
       total += item['subtotal'];
     }
     return "R\$ ${total.toStringAsFixed(2)}";
+  }
+
+  Future<void> enviarPedido() async {
+    // Lógica para enviar o pedido via mensagem no whatsapp
+    String mensagem = "Olá, gostaria de fazer um pedido:\n";
+    for (var item in carrinho) {
+      mensagem +=
+          "- ${item['nome']} (Quantidade: ${item['quantidade']}) - R\$ ${item['subtotal'].toStringAsFixed(2)}\n";
+    }
+    // Lógica para abrir o WhatsApp com a mensagem pré-preenchida
+    final uri = Uri.parse(
+      "https://wa.me/19991866605?text=${Uri.encodeComponent(mensagem)}",
+    );
+    final abriu = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!abriu) {
+      msgDialog('Erro', 'Nao foi possivel abrir o WhatsApp.');
+    }
   }
 
   Future<void> sair() async {
@@ -405,7 +423,7 @@ class _HomeState extends State<Home> {
                               child: Text("Limpar carrinho"),
                             ),
                             ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () => enviarPedido(),
                               child: Text("Eviar pedido"),
                             ),
                           ],

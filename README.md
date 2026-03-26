@@ -32,7 +32,17 @@ flutter run
 ![Screenshots](./assets/info/screenshot01.png)
 ![Screenshots](./assets/info/screenshot02.png)
 ![Screenshots](./assets/info/screenshot02.png)
-### [Dwnload APK](app-release.apk)
+
+## Outras informações
+Comando para gerar o .apk para instalar no celr com Android e testar
+```bash
+flutter build apk --release
+```
+- As imagens .network geralmente não aparecem quando instalamos o .apk no dispositivo, para corrigir temos que adicionar a permição no arquivo **AndroidManifest.xml** que fica localizado em android/app/src/main antes de gerar o .apk
+```xml
+<uses-permission android:name="android.permission.INTERNET"/>
+```
+- Neste repositório existe um arquivo **[app-release.apk](./app-release.apk)** na pasta assets caso queira testar em seu celular Android, basta fazer download e instalar.
 
 ## Atividade
 - Clone e execute este App no seu PC
@@ -40,3 +50,4 @@ flutter run
 - Crie uma lista tipo json tipo mockup com produtos e usuários
 - Coloque esta lista em um repositório público gitub
 - Crie um App de carrinho de compras, com splash, login e carrinho como este porém personalizado com sua lista
+- Ao conluir gere o APK, instale e teste em um celular com Anroid
