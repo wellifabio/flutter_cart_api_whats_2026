@@ -31,7 +31,7 @@ flutter run
 ## Screenshots
 ![Screenshots](./assets/info/screenshot01.png)
 ![Screenshots](./assets/info/screenshot02.png)
-![Screenshots](./assets/info/screenshot02.png)
+![Screenshots](./assets/info/screenshot03.png)
 
 ## Outras informações
 Comando para gerar o .apk para instalar no celr com Android e testar
